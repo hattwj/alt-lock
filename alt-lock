@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# Timeout in milliseconds
+timeout="$(( 3600 * 1000 ))"
+
+function die(){
+  echo $1
+  return 1
+}
+
+# Abort if xprintidle is missing
+hash xprintidle || die "xprintidle not found in path"
+
+while true; do
+  sleep 20
+  xuser=$(w -h | cut -f1 -d ' ' | head -n1)
+  [ "$xuser" == "" ] && continue
+  idle_time=$(export DISPLAY=:0 && sudo -u $xuser xprintidle)
+  if [ "$idle_time" -gt "$timeout" ]; then
+    sudo -u $xuser bash -c "export XDG_SEAT_PATH='/org/freedesktop/DisplayManager/Seat0' && export DISPLAY=:0 && dm-tool switch-to-user nobody"
+    sleep 20
+  fi
+done
